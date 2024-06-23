@@ -9,14 +9,14 @@ with open('abi.json') as f:
 web3 = Web3(Web3.HTTPProvider('https://bsc-dataseed.binance.org/'))
 
 # Alamat kontrak
-contract_address = '0xd983c531A03072e34072537fae0A45660f919802'
+contract_address = ''
 
 # Inisialisasi kontrak
 contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
 # Kunci pribadi dan alamat akun
 private_key = ''
-account_address = '0xe0Fbe16645338c02E1A4d863192C93B2fe882fbf'
+account_address = ''
 
 def wrap(amount):
     try:
