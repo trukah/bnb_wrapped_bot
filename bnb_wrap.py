@@ -15,7 +15,7 @@ contract_address = '0xd983c531A03072e34072537fae0A45660f919802'
 contract = web3.eth.contract(address=contract_address, abi=contract_abi)
 
 # Kunci pribadi dan alamat akun
-private_key = '6d546249e8e680f23b9ef158ffd0897ff37eb9a1c9210fd1ce0f81ea9474ae62'
+private_key = ''
 account_address = '0xe0Fbe16645338c02E1A4d863192C93B2fe882fbf'
 
 def wrap(amount):
