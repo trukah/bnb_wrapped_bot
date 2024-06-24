@@ -1,0 +1,109 @@
+Baik, untuk menjaga keamanan, saya tidak akan menggunakan private key dalam contoh kode berikut. Sebagai gantinya, saya akan menunjukkan bagaimana Anda dapat menggunakan Web3.py untuk berinteraksi dengan kontrak Ethereum tanpa mengungkapkan private key secara langsung dalam kode.
+
+Anda perlu memastikan bahwa Anda memiliki file `.env` yang berisi kredensial seperti Ethereum node URL, alamat kontrak, dan mungkin ABI kontrak. Berikut adalah contoh bagaimana Anda dapat menyesuaikan bot Telegram untuk berinteraksi dengan kontrak `PeggedUSDT`:
+
+1. Install dependensi Python yang diperlukan:
+   ```bash
+   pip install python-telegram-bot web3 python-dotenv
+   ```
+
+2. Buat file `.env` di direktori yang sama dengan script Python Anda dan atur kredensial Anda:
+   ```
+   ETH_NODE_URL=<URL node Ethereum Anda>
+   CONTRACT_ADDRESS=<alamat kontrak PeggedUSDT>
+   TELEGRAM_BOT_TOKEN=<token bot Telegram Anda>
+   ```
+
+3. Berikut adalah kode Python untuk bot Telegram yang berinteraksi dengan kontrak `PeggedUSDT`:
+
+```python
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, CallbackContext
+from web3 import Web3
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# Konfigurasi Web3
+w3 = Web3(Web3.HTTPProvider(os.getenv('ETH_NODE_URL')))  # Ganti dengan URL node Ethereum Anda
+contract_address = Web3.toChecksumAddress(os.getenv('CONTRACT_ADDRESS'))
+abi = [...]  # Isi ABI kontrak PeggedUSDT
+
+# Inisialisasi kontrak
+contract = w3.eth.contract(address=contract_address, abi=abi)
+
+def start(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text('Selamat datang! Gunakan perintah /deposit dan /withdraw untuk berinteraksi dengan kontrak Pegged USDT.')
+
+def deposit(update: Update, context: CallbackContext) -> None:
+    if len(context.args) == 0:
+        update.message.reply_text('Gunakan perintah /deposit <jumlah>')
+        return
+
+    amount = float(context.args[0])
+    amount_in_wei = w3.toWei(amount, 'ether')
+
+    # Mendapatkan alamat Ethereum pengguna dari update Telegram
+    user_address = update.message.from_user.id
+
+    nonce = w3.eth.getTransactionCount(user_address)
+    txn = contract.functions.deposit(amount_in_wei).buildTransaction({
+        'from': user_address,
+        'nonce': nonce,
+        'gas': 2000000,
+        'gasPrice': w3.toWei('5', 'gwei'),
+    })
+
+    signed_txn = w3.eth.account.sign_transaction(txn, private_key=os.getenv('PRIVATE_KEY'))
+    tx_hash = w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+
+    update.message.reply_text(f'Transaksi deposit dikirim: {w3.toHex(tx_hash)}')
+
+def withdraw(update: Update, context: CallbackContext) -> None:
+    if len(context.args) == 0:
+        update.message.reply_text('Gunakan perintah /withdraw <jumlah>')
+        return
+
+    amount = float(context.args[0])
+    amount_in_wei = w3.toWei(amount, 'ether')
+
+    # Mendapatkan alamat Ethereum pengguna dari update Telegram
+    user_address = update.message.from_user.id
+
+    nonce = w3.eth.getTransactionCount(user_address)
+    txn = contract.functions.withdraw(amount_in_wei).buildTransaction({
+        'from': user_address,
+        'nonce': nonce,
+        'gas': 2000000,
+        'gasPrice': w3.toWei('5', 'gwei'),
+    })
+
+    signed_txn = w3.eth.account.sign_transaction(txn, private_key=os.getenv('PRIVATE_KEY'))
+    tx_hash = w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+
+    update.message.reply_text(f'Transaksi withdraw dikirim: {w3.toHex(tx_hash)}')
+
+def main() -> None:
+    updater = Updater(os.getenv('TELEGRAM_BOT_TOKEN'))  # Ganti dengan token bot Telegram Anda
+
+    dispatcher = updater.dispatcher
+
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("deposit", deposit))
+    dispatcher.add_handler(CommandHandler("withdraw", withdraw))
+
+    updater.start_polling()
+
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
+```
+
+Penjelasan tambahan:
+- Di dalam fungsi `deposit` dan `withdraw`, saya menggunakan `update.message.from_user.id` untuk mendapatkan alamat Ethereum dari pengguna Telegram yang melakukan perintah. Pastikan ini hanya untuk tujuan demonstrasi; Anda perlu mengonversi ini ke format alamat Ethereum yang sesuai dalam aplikasi nyata.
+- Anda perlu memasukkan ABI kontrak yang sesuai di dalam variabel `abi`.
+- Pastikan Anda menambahkan penanganan kesalahan dan validasi yang sesuai untuk perintah deposit dan withdraw agar bot berfungsi dengan baik dan aman.
+
+Pastikan untuk memverifikasi dan menguji semua kode sebelum menerapkannya di lingkungan produksi.
